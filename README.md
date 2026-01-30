@@ -1,36 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Guía Terapia - POC
 
-## Getting Started
+Plataforma web para terapeutas y fisioterapeutas orientada a zonas rurales de Europa, que permite consultar y asignar guías de terapias en formato de paquetes de videos.
 
-First, run the development server:
+## 🚀 Inicio Rápido
 
 ```bash
+# Instalar dependencias
+npm install
+
+# Inicializar base de datos con datos de prueba
+npm run db:seed
+
+# Iniciar servidor de desarrollo
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir [http://localhost:3000](http://localhost:3000) en el navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📋 Credenciales de Prueba
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Acceso Profesional (Login)
+| Rol | Email | Contraseña |
+|-----|-------|------------|
+| Administrador | admin@guiaterapia.com | admin123 |
+| Jefe de Clínica | maria@fisiomontes.es | admin123 |
+| Terapeuta | carlos@fisiomontes.es | admin123 |
 
-## Learn More
+### Códigos de Acceso Efímero
+| Código | Paquete |
+|--------|---------|
+| ABC123 | Ejercicios básicos para lumbalgia |
+| XYZ789 | Rehabilitación de rodilla |
 
-To learn more about Next.js, take a look at the following resources:
+## 🏗️ Arquitectura
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Stack Tecnológico
+- **Frontend**: Next.js 16 (App Router)
+- **UI**: Tailwind CSS + Componentes personalizados
+- **Base de Datos**: SQLite (POC) → PostgreSQL (producción)
+- **ORM**: Prisma
+- **Autenticación**: NextAuth.js v5
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Estructura del Proyecto
+```
+src/
+├── app/                    # Rutas y páginas (App Router)
+│   ├── page.tsx           # Landing page
+│   ├── acceso/            # Acceso con código efímero
+│   ├── terapias/          # Catálogo público
+│   ├── ver/               # Reproductor de videos
+│   ├── admin/             # Panel de administración
+│   │   ├── clinicas/      # CRUD clínicas
+│   │   ├── paquetes/      # CRUD paquetes
+│   │   └── codigos/       # Gestión códigos
+│   ├── api/               # API Routes
+│   └── login/             # Autenticación
+├── components/            # Componentes reutilizables
+│   ├── ui/               # Button, Card, Input, Badge
+│   ├── layout/           # Header, Footer
+│   └── video/            # YouTubePlayer, VideoCard
+├── lib/                  # Utilidades y configuración
+│   ├── auth.ts          # Configuración NextAuth
+│   ├── prisma.ts        # Cliente Prisma
+│   └── utils.ts         # Funciones de utilidad
+└── types/               # Tipos TypeScript
+```
 
-## Deploy on Vercel
+## 👥 Roles y Permisos
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Rol | Descripción |
+|-----|-------------|
+| **Administrativo** | Acceso completo, gestión de todas las clínicas y usuarios |
+| **Jefe de Clínica** | Gestión de su clínica, terapeutas y paquetes propios |
+| **Usuario Efímero** | Acceso temporal con código, solo visualización |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🎯 Flujos Principales
+
+### Usuario Efímero (Paciente)
+1. Recibe código del terapeuta (ej: ABC123)
+2. Accede a `/acceso` e introduce el código
+3. Ve los paquetes de videos asignados
+4. Reproduce los videos de ejercicios
+
+### Terapeuta/Admin
+1. Login en `/login`
+2. Accede al dashboard `/admin`
+3. Crea/gestiona paquetes de videos
+4. Genera códigos de acceso para pacientes
+
+## 📦 Scripts Disponibles
+
+```bash
+npm run dev          # Servidor de desarrollo
+npm run build        # Compilar para producción
+npm run db:seed      # Poblar BD con datos de prueba
+npm run db:studio    # Abrir Prisma Studio
+npm run db:reset     # Resetear BD y repoblar
+```
+
+## 🎨 Consideraciones UX
+
+Diseñado para usuarios mayores de 40 años:
+- Tipografía base de 18px
+- Botones grandes (mínimo 48x48px)
+- Alto contraste (WCAG AA)
+- Navegación lineal y simple
+- Iconos siempre con texto
+
+## 🔜 Próximos Pasos (Producto Final)
+
+1. **Hosting de videos propio** - Migrar de YouTube
+2. **Multi-idioma** - ES, EN, FR, DE
+3. **PWA** - Instalable en móviles
+4. **PostgreSQL** - Migrar para producción

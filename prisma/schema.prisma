@@ -1,0 +1,190 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// MODELOS DE AUTENTICACIÓN (NextAuth)
+// ============================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// MODELO DE USUARIO
+// ============================================
+
+// Roles: ADMINISTRATIVO, JEFE_CLINICA, TERAPEUTA (como String para SQLite)
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  rol           String    @default("TERAPEUTA") // ADMINISTRATIVO, JEFE_CLINICA, TERAPEUTA
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones
+  accounts  Account[]
+  sessions  Session[]
+  clinica   Clinica?  @relation(fields: [clinicaId], references: [id])
+  clinicaId String?
+}
+
+// ============================================
+// MODELO DE CLÍNICA
+// ============================================
+
+model Clinica {
+  id          String   @id @default(cuid())
+  nombre      String
+  direccion   String?
+  telefono    String?
+  email       String?
+  descripcion String?
+  activa      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  usuarios        User[]
+  paquetesTerapia PaqueteTerapia[]
+}
+
+// ============================================
+// MODELO DE LESIÓN / CONDICIÓN
+// ============================================
+
+model Lesion {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  categoria   String?  // Ej: "Espalda", "Rodilla", "Hombro", etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  paquetesTerapia PaqueteTerapia[]
+}
+
+// ============================================
+// MODELO DE VIDEO
+// ============================================
+
+model Video {
+  id           String   @id @default(cuid())
+  titulo       String
+  descripcion  String?
+  urlYoutube   String   // URL del video de YouTube
+  duracion     Int?     // Duración en segundos
+  thumbnailUrl String?  // URL de la miniatura
+  orden        Int      @default(0) // Orden dentro del paquete
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  paqueteTerapia   PaqueteTerapia? @relation(fields: [paqueteTerapiaId], references: [id])
+  paqueteTerapiaId String?
+}
+
+// ============================================
+// MODELO DE PAQUETE DE TERAPIA
+// ============================================
+
+model PaqueteTerapia {
+  id              String   @id @default(cuid())
+  nombre          String
+  descripcion     String?
+  instrucciones   String?  // Instrucciones generales para el paciente
+  duracionEstimada String?  // Ej: "2 semanas", "1 mes"
+  nivel           String?  // Ej: "Básico", "Intermedio", "Avanzado"
+  activo          Boolean  @default(true)
+  destacado       Boolean  @default(false) // Para mostrar en inicio
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  videos    Video[]
+  lesion    Lesion?  @relation(fields: [lesionId], references: [id])
+  lesionId  String?
+  clinica   Clinica? @relation(fields: [clinicaId], references: [id])
+  clinicaId String?
+  codigosAcceso CodigoAccesoPaquete[]
+}
+
+// ============================================
+// MODELO DE CÓDIGO DE ACCESO EFÍMERO
+// ============================================
+
+model CodigoAcceso {
+  id              String   @id @default(cuid())
+  codigo          String   @unique // Código corto para acceso (ej: "ABC123")
+  descripcion     String?  // Descripción opcional del paciente
+  fechaExpiracion DateTime // Fecha de expiración del código
+  usosMaximos     Int      @default(10) // Número máximo de usos
+  usosActuales    Int      @default(0)  // Contador de usos
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  // Relaciones con paquetes asignados
+  paquetesAsignados CodigoAccesoPaquete[]
+}
+
+// ============================================
+// RELACIÓN CÓDIGO-PAQUETE (Many-to-Many)
+// ============================================
+
+model CodigoAccesoPaquete {
+  id               String   @id @default(cuid())
+  codigoAcceso     CodigoAcceso   @relation(fields: [codigoAccesoId], references: [id], onDelete: Cascade)
+  codigoAccesoId   String
+  paqueteTerapia   PaqueteTerapia @relation(fields: [paqueteTerapiaId], references: [id], onDelete: Cascade)
+  paqueteTerapiaId String
+  asignadoEn       DateTime @default(now())
+
+  @@unique([codigoAccesoId, paqueteTerapiaId])
+}
